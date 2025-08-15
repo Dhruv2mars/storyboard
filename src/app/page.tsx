@@ -81,8 +81,34 @@ export default function Home() {
       
       if (data.success) {
         setStoryboard(data.data);
+        setProgress(90);
+        setCurrentStep("Saving storyboard...");
+
+        // Save storyboard to database
+        try {
+          const saveResponse = await fetch("/api/save-storyboard", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title: data.data.title,
+              originalPrompt: prompt.trim(),
+              scenes: data.data.scenes,
+              costs: data.data.costs,
+              status: data.data.status,
+            }),
+          });
+
+          if (saveResponse.ok) {
+            setCurrentStep("Complete!");
+          }
+        } catch (saveError) {
+          console.log("Save failed, but generation succeeded:", saveError);
+          setCurrentStep("Complete! (Save failed)");
+        }
+        
         setProgress(100);
-        setCurrentStep("Complete!");
       } else {
         throw new Error("Generation failed");
       }
