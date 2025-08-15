@@ -3,7 +3,16 @@ import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+// Validate and format the Convex URL
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+if (!convexUrl) {
+  throw new Error("NEXT_PUBLIC_CONVEX_URL is not set in environment variables");
+}
+
+// Ensure the URL has the proper protocol
+const formattedUrl = convexUrl.startsWith('http') ? convexUrl : `https://${convexUrl.replace(/^\/+/, '')}`;
+
+const convex = new ConvexHttpClient(formattedUrl);
 
 export async function POST(request: NextRequest) {
   try {
