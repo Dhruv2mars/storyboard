@@ -1,6 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY is not set in environment variables");
+}
+
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export interface Scene {
   scene_number: number;
@@ -76,7 +80,7 @@ export async function generateStory(userPrompt: string): Promise<StoryResponse> 
     let parsed: StoryResponse;
     try {
       // Extract JSON from response if there's any extra text
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonMatch = text?.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error("No valid JSON found in response");
       }

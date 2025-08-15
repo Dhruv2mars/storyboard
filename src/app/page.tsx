@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Film, Sparkles, Clock, DollarSign } from "lucide-react";
+import Image from "next/image";
 
 interface Scene {
   scene_number: number;
@@ -296,9 +297,11 @@ export default function Home() {
                           {scene.imageData ? (
                             <div className="space-y-2">
                               <h4 className="font-medium">Generated Image</h4>
-                              <img
+                              <Image
                                 src={`data:${scene.contentType};base64,${scene.imageData}`}
                                 alt={`Scene ${scene.scene_number}`}
+                                width={640}
+                                height={360}
                                 className="w-full rounded border"
                               />
                             </div>

@@ -48,12 +48,23 @@ export async function POST(request: NextRequest) {
     const imageCost = generateImages ? estimateImageGenerationCost() * storyResponse.scenes.length : 0;
     const totalEstimatedCost = textCost + imageCost;
 
-    // Prepare scenes with optional image generation
-    const scenesWithImages = [];
+    interface SceneData {
+  scene_number: number;
+  scene_description: string;
+  image_prompt: string;
+  status: string;
+  imageData?: string;
+  contentType?: string;
+  size?: number;
+  error?: string;
+}
+
+// Prepare scenes with optional image generation
+    const scenesWithImages: SceneData[] = [];
     let totalActualCost = textCost;
 
     for (const scene of storyResponse.scenes) {
-      const sceneData: any = {
+      const sceneData: SceneData = {
         scene_number: scene.scene_number,
         scene_description: scene.scene_description,
         image_prompt: scene.image_prompt,

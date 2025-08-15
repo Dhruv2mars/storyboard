@@ -1,6 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY is not set in environment variables");
+}
+
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export interface ImageGenerationResult {
   imageData: string; // Base64 encoded image data
@@ -22,7 +26,7 @@ export async function generateImage(imagePrompt: string): Promise<ImageGeneratio
     if (result.candidates) {
       for (const candidate of result.candidates) {
         for (const part of candidate.content?.parts || []) {
-          if (part.inlineData) {
+          if (part.inlineData && part.inlineData.data) {
             const imageData = part.inlineData.data;
             const contentType = part.inlineData.mimeType || "image/png";
             

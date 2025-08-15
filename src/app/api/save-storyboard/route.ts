@@ -34,13 +34,21 @@ export async function POST(request: NextRequest) {
       const userEmail = request.headers.get("clerk-user-email") || "user@example.com";
       const userName = request.headers.get("clerk-user-name") || "User";
       
-      const convexUserId = await convex.mutation(api.users.createUser, {
+      await convex.mutation(api.users.createUser, {
         clerkId: userId,
         email: userEmail,
         name: userName,
       });
 
-      convexUser = { _id: convexUserId };
+      // Fetch the newly created user to get all required properties
+      convexUser = await convex.query(api.users.getUserByClerkId, {
+        clerkId: userId,
+      });
+    }
+
+    // Ensure we have a valid user before proceeding
+    if (!convexUser) {
+      throw new Error("Failed to get or create user");
     }
 
     // Create storyboard
@@ -50,7 +58,6 @@ export async function POST(request: NextRequest) {
       originalPrompt,
       sceneCount: scenes.length,
       estimatedCost: costs?.estimated || 0,
-      actualCost: costs?.actual || 0,
     });
 
     // Update storyboard status
