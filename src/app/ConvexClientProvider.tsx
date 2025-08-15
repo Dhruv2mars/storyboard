@@ -12,10 +12,19 @@ export function ConvexClientProvider({
 }) {
   const convex = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+    
     if (!url) {
-      throw new Error("Missing NEXT_PUBLIC_CONVEX_URL");
+      console.warn("Missing NEXT_PUBLIC_CONVEX_URL environment variable");
+      // Return a dummy client during build time to prevent build failures
+      return new ConvexReactClient("https://dummy.convex.cloud");
     }
-    return new ConvexReactClient(url);
+
+    // Ensure the URL is properly formatted
+    const formattedUrl = url.startsWith('http') 
+      ? url 
+      : `https://${url.replace(/^\/+/, '')}`;
+
+    return new ConvexReactClient(formattedUrl);
   }, []);
 
   return (

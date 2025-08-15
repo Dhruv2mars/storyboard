@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { useUser } from "@clerk/nextjs";
+import dynamic from "next/dynamic";
 import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +11,40 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Film, Calendar, DollarSign, Trash2 } from "lucide-react";
 import Link from "next/link";
 
-export default function Dashboard() {
-  const { user } = useUser();
+function Dashboard() {
+  const { user, isLoaded } = useUser();
   
-  // Get user's storyboards
+  // Get user's storyboards - only when user is loaded and authenticated
   const convexUser = useQuery(api.users.getUserByClerkId, 
-    user?.id ? { clerkId: user.id } : "skip"
+    (isLoaded && user?.id) ? { clerkId: user.id } : "skip"
   );
   
   const storyboards = useQuery(api.storyboards.getUserStoryboards,
-    convexUser ? { userId: convexUser._id } : "skip"
+    (convexUser && convexUser._id) ? { userId: convexUser._id } : "skip"
   );
+
+  if (!isLoaded) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -144,3 +168,8 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// Export with dynamic import to prevent static generation
+export default dynamic(() => Promise.resolve(Dashboard), {
+  ssr: false,
+});
