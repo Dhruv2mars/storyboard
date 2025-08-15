@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY!);
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 export interface ImageGenerationResult {
   imageData: string; // Base64 encoded image data
@@ -10,31 +10,31 @@ export interface ImageGenerationResult {
 
 export async function generateImage(imagePrompt: string): Promise<ImageGenerationResult> {
   try {
-    const model = genAI.getGenerativeModel({
+    const result = await genAI.models.generateContent({
       model: "gemini-2.0-flash-preview-image-generation",
-      generationConfig: {
+      contents: imagePrompt,
+      config: {
         responseModalities: ["Text", "Image"]
       }
     });
-
-    const result = await model.generateContent(imagePrompt);
-    const response = result.response;
     
     // Look for image data in the response
-    for (const candidate of response.candidates || []) {
-      for (const part of candidate.content?.parts || []) {
-        if (part.inlineData) {
-          const imageData = part.inlineData.data;
-          const contentType = part.inlineData.mimeType || "image/png";
-          
-          // Calculate size from base64 data
-          const size = Math.floor((imageData.length * 3) / 4);
-          
-          return {
-            imageData,
-            contentType,
-            size,
-          };
+    if (result.candidates) {
+      for (const candidate of result.candidates) {
+        for (const part of candidate.content?.parts || []) {
+          if (part.inlineData) {
+            const imageData = part.inlineData.data;
+            const contentType = part.inlineData.mimeType || "image/png";
+            
+            // Calculate size from base64 data
+            const size = Math.floor((imageData.length * 3) / 4);
+            
+            return {
+              imageData,
+              contentType,
+              size,
+            };
+          }
         }
       }
     }
