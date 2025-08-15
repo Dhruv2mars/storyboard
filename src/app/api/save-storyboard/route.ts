@@ -14,15 +14,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Convex client inside the function to avoid build-time issues
-    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
-    if (!convexUrl) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL is not set in environment variables");
-    }
+    let convex;
+    try {
+      const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+      if (!convexUrl) {
+        throw new Error("NEXT_PUBLIC_CONVEX_URL is not set in environment variables");
+      }
 
-    // Ensure the URL has the proper protocol
-    const formattedUrl = convexUrl.startsWith('http') ? convexUrl : `https://${convexUrl.replace(/^\/+/, '')}`;
-    
-    const convex = new ConvexHttpClient(formattedUrl);
+      // Ensure the URL has the proper protocol
+      const formattedUrl = convexUrl.startsWith('http') ? convexUrl : `https://${convexUrl.replace(/^\/+/, '')}`;
+      
+      convex = new ConvexHttpClient(formattedUrl);
+    } catch (envError) {
+      console.error("Failed to initialize Convex client:", envError);
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
 
     const body = await request.json();
     const { 
