@@ -23,6 +23,7 @@ export const createScene = internalMutation({
     return await ctx.db.insert("scenes", {
       storyboardId: args.storyboardId,
       sceneNumber: args.sceneNumber,
+      // Use new field names for consistency
       sceneDescription: args.sceneDescription,
       sceneAction: args.sceneAction,
       imageStorageId: args.imageStorageId,

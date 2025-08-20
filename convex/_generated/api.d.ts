@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as apiKeyManager from "../apiKeyManager.js";
+import type * as crons from "../crons.js";
 import type * as rateLimiter from "../rateLimiter.js";
 import type * as scenes from "../scenes.js";
 import type * as storyboardProcessor from "../storyboardProcessor.js";
@@ -34,6 +35,7 @@ import type * as users from "../users.js";
  */
 declare const fullApi: ApiFromModules<{
   apiKeyManager: typeof apiKeyManager;
+  crons: typeof crons;
   rateLimiter: typeof rateLimiter;
   scenes: typeof scenes;
   storyboardProcessor: typeof storyboardProcessor;
