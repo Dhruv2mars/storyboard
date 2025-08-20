@@ -47,7 +47,7 @@ export function AppLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   
-  // Get user's storyboards
+  // Get user's storyboards with error handling
   const storyboards = useQuery(
     api.storyboards.getUserStoryboards,
     user?.id ? { userId: user.id } : "skip"
@@ -112,7 +112,7 @@ export function AppLayout({
           <div className="flex-1 overflow-hidden">
             <ScrollArea className="h-full px-4 py-2">
               <div className="space-y-2">
-              {storyboards?.map((story) => (
+              {storyboards && storyboards.length > 0 ? storyboards.map((story) => (
                 <div
                   key={story._id}
                   onClick={() => {
@@ -149,9 +149,16 @@ export function AppLayout({
                     </Button>
                   </div>
                 </div>
-              ))}
+              )) : null}
               
-              {storyboards?.length === 0 && (
+              {storyboards === undefined && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Film className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Loading stories...</p>
+                </div>
+              )}
+              
+              {storyboards && storyboards.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Film className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No storyboards yet</p>

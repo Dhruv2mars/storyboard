@@ -17,9 +17,10 @@ export function UserInitializer() {
         email: user.primaryEmailAddress?.emailAddress,
         name: user.fullName || user.firstName || "User",
         imageUrl: user.imageUrl,
-      }).catch(() => {
-        // Silently handle errors - user might already exist
-        console.log("User initialization completed or already exists");
+      }).catch((error) => {
+        // Enhanced error handling for production debugging
+        console.error("User initialization failed:", error);
+        // Don't throw to prevent app crashes
       });
     }
   }, [isLoaded, user?.id, user?.firstName, user?.fullName, user?.imageUrl, user?.primaryEmailAddress?.emailAddress, initializeUser]);
