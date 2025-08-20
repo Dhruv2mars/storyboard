@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import { UserInitializer } from "@/components/UserInitializer";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,12 +33,14 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <ThemeProvider defaultTheme="system">
-            <ConvexClientProvider>
-              <UserInitializer />
-              {children}
-            </ConvexClientProvider>
-          </ThemeProvider>
+          <ErrorBoundary>
+            <ThemeProvider defaultTheme="system">
+              <ConvexClientProvider>
+                <UserInitializer />
+                {children}
+              </ConvexClientProvider>
+            </ThemeProvider>
+          </ErrorBoundary>
         </body>
       </html>
     </ClerkProvider>

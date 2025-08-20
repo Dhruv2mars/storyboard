@@ -47,7 +47,7 @@ export function AppLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   
-  // Get user's storyboards with error handling
+  // Get user's storyboards with safe error handling
   const storyboards = useQuery(
     api.storyboards.getUserStoryboards,
     user?.id ? { userId: user.id } : "skip"
