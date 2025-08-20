@@ -90,8 +90,9 @@ export function StoryboardViewer({ storyboardId }: StoryboardViewerProps) {
   }
 
   const completedScenes = scenes?.filter(s => s.status === "completed").length || 0;
-  const progressPercent = currentStoryboard.totalScenes > 0 
-    ? (completedScenes / currentStoryboard.totalScenes) * 100 
+  const totalScenes = currentStoryboard.totalScenes || currentStoryboard.sceneCount || 0;
+  const progressPercent = totalScenes > 0 
+    ? (completedScenes / totalScenes) * 100 
     : 0;
 
   return (
@@ -142,7 +143,7 @@ export function StoryboardViewer({ storyboardId }: StoryboardViewerProps) {
                         Scene {scene.sceneNumber}
                       </h3>
                       <p className="text-white/90 text-sm leading-relaxed line-clamp-3 overflow-hidden">
-                        {scene.sceneDescription}
+                        {scene.sceneDescription || scene.description || "Scene description"}
                       </p>
                     </div>
                   </div>

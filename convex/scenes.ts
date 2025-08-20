@@ -86,8 +86,10 @@ export const getStoryboardScenes = query({
       _creationTime: v.number(),
       storyboardId: v.id("storyboards"),
       sceneNumber: v.number(),
-      sceneDescription: v.string(),
-      sceneAction: v.string(),
+      // Support both old and new field names for backward compatibility
+      description: v.optional(v.string()), // Legacy field name
+      sceneDescription: v.optional(v.string()), // New field name
+      sceneAction: v.optional(v.string()),
       imagePrompt: v.optional(v.string()),
       imageStorageId: v.optional(v.id("_storage")),
       imageContentType: v.optional(v.string()),
@@ -133,8 +135,10 @@ export const getScene = query({
       _creationTime: v.number(),
       storyboardId: v.id("storyboards"),
       sceneNumber: v.number(),
-      sceneDescription: v.string(),
-      sceneAction: v.string(),
+      // Support both old and new field names for backward compatibility
+      description: v.optional(v.string()), // Legacy field name
+      sceneDescription: v.optional(v.string()), // New field name
+      sceneAction: v.optional(v.string()),
       imagePrompt: v.optional(v.string()),
       imageStorageId: v.optional(v.id("_storage")),
       imageContentType: v.optional(v.string()),

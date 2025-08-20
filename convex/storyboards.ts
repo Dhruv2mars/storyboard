@@ -92,7 +92,9 @@ export const getUserStoryboards = query({
         v.literal("failed"),
         v.literal("partial")
       ),
-      totalScenes: v.number(),
+      // Support both old and new field names for backward compatibility
+      sceneCount: v.optional(v.number()), // Legacy field name
+      totalScenes: v.optional(v.number()), // New field name
       completedScenes: v.optional(v.number()),
       estimatedCost: v.optional(v.number()),
       actualCost: v.optional(v.number()),

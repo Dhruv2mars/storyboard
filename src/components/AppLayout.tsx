@@ -135,7 +135,7 @@ export function AppLayout({
                       </h4>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Film className="w-3 h-3" />
-                        <span>{story.totalScenes} scenes</span>
+                        <span>{story.totalScenes || story.sceneCount || 0} scenes</span>
                       </div>
                     </div>
                     

@@ -27,7 +27,9 @@ export default defineSchema({
       v.literal("failed"),
       v.literal("partial")
     ),
-    totalScenes: v.number(),
+    // Support both old and new field names for backward compatibility
+    sceneCount: v.optional(v.number()), // Legacy field name
+    totalScenes: v.optional(v.number()), // New field name
     completedScenes: v.optional(v.number()),
     estimatedCost: v.optional(v.number()),
     actualCost: v.optional(v.number()),
@@ -39,8 +41,10 @@ export default defineSchema({
   scenes: defineTable({
     storyboardId: v.id("storyboards"),
     sceneNumber: v.number(),
-    sceneDescription: v.string(),
-    sceneAction: v.string(),
+    // Support both old and new field names for backward compatibility
+    description: v.optional(v.string()), // Legacy field name
+    sceneDescription: v.optional(v.string()), // New field name
+    sceneAction: v.optional(v.string()), // Make optional for backward compatibility
     imagePrompt: v.optional(v.string()), // Complete image generation prompt
     imageStorageId: v.optional(v.id("_storage")),
     imageContentType: v.optional(v.string()),
