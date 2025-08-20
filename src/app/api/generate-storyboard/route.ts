@@ -67,13 +67,13 @@ export async function POST(request: NextRequest) {
       const sceneData: SceneData = {
         scene_number: scene.scene_number,
         scene_description: scene.scene_description,
-        image_prompt: scene.image_prompt,
+        image_prompt: scene.scene_action,
         status: generateImages ? "generating" : "text_only",
       };
 
       if (generateImages) {
         try {
-          const imageResult = await generateImage(scene.image_prompt);
+          const imageResult = await generateImage(scene.scene_action);
           sceneData.imageData = imageResult.imageData;
           sceneData.contentType = imageResult.contentType;
           sceneData.size = imageResult.size;

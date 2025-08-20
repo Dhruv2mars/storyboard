@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import { api } from "../../../convex/_generated/api";
@@ -14,14 +14,25 @@ import Link from "next/link";
 function Dashboard() {
   const { user, isLoaded } = useUser();
   
-  // Get user's storyboards - only when user is loaded and authenticated
-  const convexUser = useQuery(api.users.getUserByClerkId, 
-    (isLoaded && user?.id) ? { clerkId: user.id } : "skip"
+  // Get user's storyboards using Clerk ID directly
+  const storyboards = useQuery(api.storyboards.getUserStoryboards,
+    (isLoaded && user?.id) ? { userId: user.id } : "skip"
   );
   
-  const storyboards = useQuery(api.storyboards.getUserStoryboards,
-    (convexUser && convexUser._id) ? { userId: convexUser._id } : "skip"
-  );
+  // Delete mutation
+  const deleteStoryboard = useMutation(api.storyboards.deleteStoryboard);
+  
+  const handleDelete = async (storyboardId: string) => {
+    if (!user?.id) return;
+    if (!confirm("Are you sure you want to delete this storyboard? This action cannot be undone.")) return;
+    
+    try {
+      await deleteStoryboard({ storyboardId: storyboardId as never, userId: user.id });
+    } catch (error) {
+      console.error("Failed to delete storyboard:", error);
+      alert("Failed to delete storyboard. Please try again.");
+    }
+  };
 
   if (!isLoaded) {
     return (
@@ -138,13 +149,19 @@ function Dashboard() {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Film className="w-4 h-4" />
-                      {storyboard.sceneCount} scenes
+                      {storyboard.totalScenes} scenes
                     </div>
                     <div className="flex items-center gap-1">
                       <DollarSign className="w-4 h-4" />
                       ${storyboard.actualCost?.toFixed(3) || "0.000"}
                     </div>
                   </div>
+                  
+                  {storyboard.logline && (
+                    <div className="text-sm text-muted-foreground line-clamp-2">
+                      {storyboard.logline}
+                    </div>
+                  )}
                   
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
@@ -155,7 +172,11 @@ function Dashboard() {
                     <Button variant="outline" size="sm" className="flex-1">
                       View Details
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDelete(storyboard._id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>

@@ -1,70 +1,103 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
-export const createStoryboard = mutation({
-  args: {
-    userId: v.id("users"),
-    title: v.string(),
-    originalPrompt: v.string(),
-    sceneCount: v.number(),
-    estimatedCost: v.optional(v.number()),
-  },
-  returns: v.id("storyboards"),
-  handler: async (ctx, args) => {
-    return await ctx.db.insert("storyboards", {
-      userId: args.userId,
-      title: args.title,
-      originalPrompt: args.originalPrompt,
-      status: "generating",
-      sceneCount: args.sceneCount,
-      estimatedCost: args.estimatedCost,
-    });
-  },
-});
 
-export const updateStoryboardStatus = mutation({
+// Internal mutation for creating storyboard from action
+export const createStoryboard = internalMutation({
   args: {
-    storyboardId: v.id("storyboards"),
+    userId: v.string(), // Clerk user ID
+    title: v.string(),
+    logline: v.string(),
+    originalPrompt: v.string(),
+    storyAnchorContent: v.string(),
     status: v.union(
       v.literal("generating"),
       v.literal("completed"),
       v.literal("failed"),
       v.literal("partial")
     ),
+    totalScenes: v.number(),
+  },
+  returns: v.id("storyboards"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("storyboards", {
+      userId: args.userId,
+      title: args.title,
+      logline: args.logline,
+      originalPrompt: args.originalPrompt,
+      storyAnchorContent: args.storyAnchorContent,
+      status: args.status,
+      totalScenes: args.totalScenes,
+    });
+  },
+});
+
+// Internal mutation for updating storyboard from action
+export const updateStoryboard = internalMutation({
+  args: {
+    id: v.id("storyboards"),
+    status: v.union(
+      v.literal("generating"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("partial")
+    ),
+    completedScenes: v.optional(v.number()),
+    estimatedCost: v.optional(v.number()),
     actualCost: v.optional(v.number()),
+    textCost: v.optional(v.number()),
+    imagesCost: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     const updates: any = { status: args.status };
-    if (args.actualCost !== undefined) {
-      updates.actualCost = args.actualCost;
-    }
+    if (args.completedScenes !== undefined) updates.completedScenes = args.completedScenes;
+    if (args.estimatedCost !== undefined) updates.estimatedCost = args.estimatedCost;
+    if (args.actualCost !== undefined) updates.actualCost = args.actualCost;
+    if (args.textCost !== undefined) updates.textCost = args.textCost;
+    if (args.imagesCost !== undefined) updates.imagesCost = args.imagesCost;
 
-    await ctx.db.patch(args.storyboardId, updates);
+    await ctx.db.patch(args.id, updates);
     return null;
   },
 });
 
+// Internal query for getting storyboard from actions
+export const getStoryboardInternal = internalQuery({
+  args: {
+    id: v.id("storyboards"),
+  },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+
+// Query for user storyboards (updated for new schema)
 export const getUserStoryboards = query({
   args: {
-    userId: v.id("users"),
+    userId: v.string(), // Clerk user ID
   },
   returns: v.array(
     v.object({
       _id: v.id("storyboards"),
       _creationTime: v.number(),
-      userId: v.id("users"),
+      userId: v.string(),
       title: v.string(),
+      logline: v.optional(v.string()),
       originalPrompt: v.string(),
+      storyAnchorContent: v.optional(v.string()),
       status: v.union(
         v.literal("generating"),
         v.literal("completed"),
         v.literal("failed"),
         v.literal("partial")
       ),
-      sceneCount: v.number(),
+      totalScenes: v.number(),
+      completedScenes: v.optional(v.number()),
       estimatedCost: v.optional(v.number()),
       actualCost: v.optional(v.number()),
+      textCost: v.optional(v.number()),
+      imagesCost: v.optional(v.number()),
     })
   ),
   handler: async (ctx, args) => {
@@ -76,38 +109,10 @@ export const getUserStoryboards = query({
   },
 });
 
-export const getStoryboard = query({
-  args: {
-    storyboardId: v.id("storyboards"),
-  },
-  returns: v.union(
-    v.object({
-      _id: v.id("storyboards"),
-      _creationTime: v.number(),
-      userId: v.id("users"),
-      title: v.string(),
-      originalPrompt: v.string(),
-      status: v.union(
-        v.literal("generating"),
-        v.literal("completed"),
-        v.literal("failed"),
-        v.literal("partial")
-      ),
-      sceneCount: v.number(),
-      estimatedCost: v.optional(v.number()),
-      actualCost: v.optional(v.number()),
-    }),
-    v.null()
-  ),
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.storyboardId);
-  },
-});
-
 export const deleteStoryboard = mutation({
   args: {
     storyboardId: v.id("storyboards"),
-    userId: v.id("users"),
+    userId: v.string(), // Clerk user ID
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -128,6 +133,10 @@ export const deleteStoryboard = mutation({
       .collect();
 
     for (const scene of scenes) {
+      // Delete image from storage if it exists
+      if (scene.imageStorageId) {
+        await ctx.storage.delete(scene.imageStorageId);
+      }
       await ctx.db.delete(scene._id);
     }
 

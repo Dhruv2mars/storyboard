@@ -9,61 +9,37 @@ const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 export interface Scene {
   scene_number: number;
   scene_description: string;
-  image_prompt: string;
+  scene_action: string;
 }
 
 export interface StoryResponse {
   title: string;
+  logline: string;
+  story_anchor_content: string;
   scenes: Scene[];
 }
 
-const SYSTEM_PROMPT = `You are an expert AI Director, Cinematographer, and Prompt Engineer for a generative AI film studio. Your task is to take a user's high-level concept and transform it into a complete, structured storyboard plan.
+const SYSTEM_PROMPT = `You are an expert AI Director and Cinematographer. Your task is to take a user's high-level concept and transform it into a structured storyboard plan.
 
-You will perform two tasks in sequence:
-1.  **Create a Story:** First, develop a concise, scene-by-scene narrative based on the user's prompt. The story should have a clear beginning, middle, and end, consisting of 3 to 5 scenes.
-2.  **Engineer Image Prompts:** For each scene you create, you must then construct a complete and detailed "mega text prompt" that will be sent to a separate AI image generation model.
+Your workflow is:
+1.  Define the consistent "story anchor content" (characters, setting, style).
+2.  Create a 3-5 scene narrative, writing a unique "scene action" for each scene.
 
-**CRITICAL INSTRUCTIONS:**
-
-- Your final output MUST be a single, valid JSON object. Do not include any text outside of this JSON object.
-- The mega text prompt you construct for each scene MUST follow the precise three-part structure provided below, including the \`--MASTER DIRECTIVE--\`, \`--SCENE CONTENT--\`, and \`--SCENE ACTION--\` headings.
+Your final output MUST be a single, valid JSON object following the structure below. Do not include any other text or explanations.
 
 **JSON OUTPUT STRUCTURE:**
 {
   "title": "A concise, cinematic title for the story",
+  "logline": "A one-sentence summary of the story arc.",
+  "story_anchor_content": "A complete text block starting with '--SCENE CONTENT--' that defines the consistent characters, setting, and style reference for the entire story.",
   "scenes": [
     {
       "scene_number": 1,
       "scene_description": "A brief, one-sentence description of the action in this scene.",
-      "image_prompt": "The complete, multi-part mega text prompt for this scene goes here."
-    },
-    {
-      "scene_number": 2,
-      "scene_description": "...",
-      "image_prompt": "..."
+      "scene_action": "A complete text block starting with '--SCENE ACTION--' that describes the specific composition, action, and lighting for this single frame."
     }
   ]
-}
-
-**THE MEGA TEXT PROMPT TEMPLATE (Use this for the 'image_prompt' field):**
-
-**--MASTER DIRECTIVE--**
-You are an elite concept artist for the film industry. Your task is to generate a single, full-bleed cinematic sketch that visualizes a single moment from a film.
----ABSOLUTE TECHNICAL REQUIREMENTS---
-- FRAMING: The sketch MUST fill the entire 16:9 image canvas completely, from edge to edge. There must be ZERO BORDERS, MARGINS, OR PADDING. The artwork itself IS the entire image.
-- STYLE: Purely black and white charcoal sketch. The texture and lines of the charcoal should be part of the artwork, not a background.
-- COLOR & TEXT: Strictly NO COLOR. Strictly NO TEXT or annotations of any kind.
----ARTISTIC DIRECTION---
-- CINEMATOGRAPHY: Treat this as a single, powerful frame from a masterfully directed film. Emphasize dynamic composition, clear camera angles, and dramatic, high-contrast lighting (chiaroscuro).
-- MOOD: Evoke a moody, atmospheric aesthetic based on the Scene Content. Shadows are as important as the subjects.
-- CLARITY: Ensure character poses, expressions, and key actions are clear and instantly understandable.
-Based on the Scene Details provided by the user, generate the specified cinematic sketch.
-
-**--SCENE CONTENT--**
-[Define the consistent characters, setting, and style reference here.]
-
-**--SCENE ACTION--**
-[Define the specific composition, action, and lighting for this single frame here.]`;
+}`;
 
 export async function generateStory(userPrompt: string): Promise<StoryResponse> {
   try {
@@ -92,8 +68,8 @@ export async function generateStory(userPrompt: string): Promise<StoryResponse> 
     }
 
     // Validate the response structure
-    if (!parsed.title || !Array.isArray(parsed.scenes)) {
-      throw new Error("Invalid response structure: missing title or scenes");
+    if (!parsed.title || !parsed.logline || !parsed.story_anchor_content || !Array.isArray(parsed.scenes)) {
+      throw new Error("Invalid response structure: missing required fields");
     }
 
     // Validate each scene
@@ -101,7 +77,7 @@ export async function generateStory(userPrompt: string): Promise<StoryResponse> 
       if (
         typeof scene.scene_number !== "number" ||
         typeof scene.scene_description !== "string" ||
-        typeof scene.image_prompt !== "string"
+        typeof scene.scene_action !== "string"
       ) {
         throw new Error("Invalid scene structure");
       }

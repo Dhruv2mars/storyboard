@@ -1,43 +1,63 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
-export const createScene = mutation({
+// Internal mutation for creating scene from action
+export const createScene = internalMutation({
   args: {
     storyboardId: v.id("storyboards"),
     sceneNumber: v.number(),
-    description: v.string(),
-    imagePrompt: v.string(),
+    sceneDescription: v.string(),
+    sceneAction: v.string(),
+    imageStorageId: v.optional(v.id("_storage")),
+    imageContentType: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("generating"),
+      v.literal("completed"),
+      v.literal("failed")
+    ),
+    cost: v.optional(v.number()),
   },
   returns: v.id("scenes"),
   handler: async (ctx, args) => {
     return await ctx.db.insert("scenes", {
       storyboardId: args.storyboardId,
       sceneNumber: args.sceneNumber,
-      description: args.description,
-      imagePrompt: args.imagePrompt,
-      status: "pending",
+      sceneDescription: args.sceneDescription,
+      sceneAction: args.sceneAction,
+      imageStorageId: args.imageStorageId,
+      imageContentType: args.imageContentType,
+      status: args.status,
+      cost: args.cost,
     });
   },
 });
 
-export const updateSceneImage = mutation({
+export const updateSceneImage = internalMutation({
   args: {
     sceneId: v.id("scenes"),
-    imageId: v.id("_storage"),
-    imageUrl: v.string(),
+    imageStorageId: v.id("_storage"),
+    imageContentType: v.string(),
+    imagePrompt: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.sceneId, {
-      imageId: args.imageId,
-      imageUrl: args.imageUrl,
+    const updates: any = {
+      imageStorageId: args.imageStorageId,
+      imageContentType: args.imageContentType,
       status: "completed",
-    });
+    };
+    
+    if (args.imagePrompt) {
+      updates.imagePrompt = args.imagePrompt;
+    }
+    
+    await ctx.db.patch(args.sceneId, updates);
     return null;
   },
 });
 
-export const updateSceneStatus = mutation({
+export const updateSceneStatus = internalMutation({
   args: {
     sceneId: v.id("scenes"),
     status: v.union(
@@ -66,22 +86,39 @@ export const getStoryboardScenes = query({
       _creationTime: v.number(),
       storyboardId: v.id("storyboards"),
       sceneNumber: v.number(),
-      description: v.string(),
-      imagePrompt: v.string(),
-      imageId: v.optional(v.id("_storage")),
-      imageUrl: v.optional(v.string()),
+      sceneDescription: v.string(),
+      sceneAction: v.string(),
+      imagePrompt: v.optional(v.string()),
+      imageStorageId: v.optional(v.id("_storage")),
+      imageContentType: v.optional(v.string()),
       status: v.union(
         v.literal("pending"),
         v.literal("generating"),
         v.literal("completed"),
         v.literal("failed")
       ),
+      cost: v.optional(v.number()),
     })
   ),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("scenes")
       .withIndex("by_storyboard", (q) => q.eq("storyboardId", args.storyboardId))
+      .order("asc")
+      .collect();
+  },
+});
+
+// Internal query for getting storyboard scenes
+export const getStoryboardScenesInternal = internalQuery({
+  args: {
+    storyboardId: v.id("storyboards"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("scenes")
+      .withIndex("by_storyboard", (q) => q.eq("storyboardId", args.storyboardId))
+      .order("asc")
       .collect();
   },
 });
@@ -96,16 +133,18 @@ export const getScene = query({
       _creationTime: v.number(),
       storyboardId: v.id("storyboards"),
       sceneNumber: v.number(),
-      description: v.string(),
-      imagePrompt: v.string(),
-      imageId: v.optional(v.id("_storage")),
-      imageUrl: v.optional(v.string()),
+      sceneDescription: v.string(),
+      sceneAction: v.string(),
+      imagePrompt: v.optional(v.string()),
+      imageStorageId: v.optional(v.id("_storage")),
+      imageContentType: v.optional(v.string()),
       status: v.union(
         v.literal("pending"),
         v.literal("generating"),
         v.literal("completed"),
         v.literal("failed")
       ),
+      cost: v.optional(v.number()),
     }),
     v.null()
   ),
@@ -136,6 +175,32 @@ export const updateBatchSceneStatus = mutation({
         status: args.status,
       });
     }
+    return null;
+  },
+});
+
+// Query to get image URL from storage
+export const getImageUrl = query({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
+
+// Update scene cost
+export const updateSceneCost = internalMutation({
+  args: {
+    sceneId: v.id("scenes"),
+    cost: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sceneId, {
+      cost: args.cost,
+    });
     return null;
   },
 });

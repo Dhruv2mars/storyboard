@@ -1,326 +1,135 @@
 "use client";
 
 import { useState } from "react";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, useUser } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Film, Sparkles, Clock, DollarSign } from "lucide-react";
-import Image from "next/image";
+import { AppLayout } from "@/components/AppLayout";
+import { StoryCreator } from "@/components/StoryCreator";
+import { StoryboardViewer } from "@/components/StoryboardViewer";
 
-interface Scene {
-  scene_number: number;
-  scene_description: string;
-  image_prompt: string;
-  imageData?: string;
-  contentType?: string;
-  status?: "pending" | "generating" | "completed" | "failed";
-}
+type ViewMode = 'create' | 'view';
 
-interface StoryboardResult {
-  title: string;
-  scenes: Scene[];
-  status: "completed" | "partial" | "failed";
-  costs: {
-    estimated: number;
-    actual: number;
-    text: number;
-    images: number;
-  };
-  statistics: {
-    totalScenes: number;
-    completedScenes: number;
-    failedScenes: number;
-    generateImages: boolean;
-  };
+interface ViewState {
+  mode: ViewMode;
+  storyboardId?: string;
 }
 
 export default function Home() {
-  const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [storyboard, setStoryboard] = useState<StoryboardResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState("");
-
-  const generateStoryboard = async () => {
-    if (!prompt.trim()) return;
-    
-    setIsGenerating(true);
-    setError(null);
-    setStoryboard(null);
-    setProgress(0);
-    setCurrentStep("Initializing...");
-
-    try {
-      setCurrentStep("Generating story...");
-      setProgress(20);
-
-      const response = await fetch("/api/generate-storyboard", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: prompt.trim(),
-          generateImages: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate storyboard");
-      }
-
-      setProgress(50);
-      setCurrentStep("Generating images...");
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setStoryboard(data.data);
-        setProgress(90);
-        setCurrentStep("Saving storyboard...");
-
-        // Save storyboard to database
-        try {
-          const saveResponse = await fetch("/api/save-storyboard", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title: data.data.title,
-              originalPrompt: prompt.trim(),
-              scenes: data.data.scenes,
-              costs: data.data.costs,
-              status: data.data.status,
-            }),
-          });
-
-          if (saveResponse.ok) {
-            setCurrentStep("Complete!");
-          }
-        } catch (saveError) {
-          console.log("Save failed, but generation succeeded:", saveError);
-          setCurrentStep("Complete! (Save failed)");
-        }
-        
-        setProgress(100);
-      } else {
-        throw new Error("Generation failed");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      setProgress(0);
-      setCurrentStep("");
-    } finally {
-      setIsGenerating(false);
-    }
+  const { user } = useUser();
+  const [viewState, setViewState] = useState<ViewState>({ mode: 'create' });
+  
+  // Get user's storyboards to find current story title
+  const storyboards = useQuery(
+    api.storyboards.getUserStoryboards,
+    user?.id ? { userId: user.id } : "skip"
+  );
+  
+  // Find current storyboard title
+  const currentStoryboard = viewState.storyboardId 
+    ? storyboards?.find(sb => sb._id === viewState.storyboardId)
+    : null;
+  
+  const handleStoryboardSelect = (storyboardId: string) => {
+    setViewState({ mode: 'view', storyboardId });
   };
 
+  const handleNewStoryboard = () => {
+    setViewState({ mode: 'create' });
+  };
+
+  const handleStoryCreated = (storyboardId: string) => {
+    setViewState({ mode: 'view', storyboardId });
+  };
+
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <>
       <SignedOut>
-        <div className="text-center py-16">
-          <div className="mb-8">
-            <Film className="w-16 h-16 mx-auto mb-4 text-primary" />
-            <h1 className="text-4xl font-bold mb-4">AI Storyboard Generator</h1>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Transform your ideas into professional cinematic storyboards with AI-generated 
-              black and white sketches. Sign in to get started.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card>
-              <CardHeader>
-                <Sparkles className="w-8 h-8 text-primary mb-2" />
-                <CardTitle className="text-lg">AI-Powered</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Advanced AI models generate detailed scene descriptions and professional sketches
-                </p>
-              </CardContent>
-            </Card>
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="container mx-auto px-4 py-16 max-w-4xl text-center">
+            <div className="mb-12">
+              <Film className="w-20 h-20 mx-auto mb-6 text-primary" />
+              <h1 className="text-5xl font-bold mb-6">AI Storyboard Generator</h1>
+              <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+                Transform your story ideas into professional cinematic storyboards with AI-generated 
+                black and white sketches. Sign in to get started.
+              </p>
+            </div>
             
-            <Card>
-              <CardHeader>
-                <Clock className="w-8 h-8 text-primary mb-2" />
-                <CardTitle className="text-lg">Fast Generation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Get complete storyboards with 3-5 scenes in under a minute
-                </p>
-              </CardContent>
-            </Card>
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <Card className="text-center">
+                <CardHeader>
+                  <Sparkles className="w-12 h-12 text-primary mb-4 mx-auto" />
+                  <CardTitle className="text-xl">AI-Powered</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Advanced AI models generate detailed scene descriptions and professional sketches
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="text-center">
+                <CardHeader>
+                  <Clock className="w-12 h-12 text-primary mb-4 mx-auto" />
+                  <CardTitle className="text-xl">Fast Generation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Get complete storyboards with 3-5 scenes in under a minute
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="text-center">
+                <CardHeader>
+                  <DollarSign className="w-12 h-12 text-primary mb-4 mx-auto" />
+                  <CardTitle className="text-xl">Affordable</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Professional storyboards starting at just $0.12-0.20 per complete board
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
             
-            <Card>
-              <CardHeader>
-                <DollarSign className="w-8 h-8 text-primary mb-2" />
-                <CardTitle className="text-lg">Affordable</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Professional storyboards starting at just $0.12-0.20 per complete board
-                </p>
-              </CardContent>
-            </Card>
+            <div className="mt-12 flex justify-center gap-4">
+              <SignInButton mode="modal">
+                <Button variant="outline" size="lg">
+                  Sign In
+                </Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button size="lg">
+                  Get Started
+                </Button>
+              </SignUpButton>
+            </div>
           </div>
         </div>
       </SignedOut>
 
       <SignedIn>
-        <div className="space-y-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-2">Create Your Storyboard</h1>
-            <p className="text-muted-foreground">
-              Enter your story idea and watch it come to life
-            </p>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Story Prompt</CardTitle>
-              <CardDescription>
-                Describe your story idea in a few sentences. Be creative!
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="Example: A detective investigates mysterious disappearances in a neon-lit cyberpunk city, discovering a conspiracy involving AI consciousness..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-32"
-                disabled={isGenerating}
-              />
-              
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-muted-foreground">
-                  {prompt.length}/2000 characters
-                </div>
-                <Button 
-                  onClick={generateStoryboard}
-                  disabled={!prompt.trim() || isGenerating || prompt.length < 10}
-                  className="min-w-32"
-                >
-                  {isGenerating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Storyboard
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {isGenerating && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>{currentStep}</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="w-full" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {error && (
-            <Card className="border-destructive">
-              <CardContent className="pt-6">
-                <p className="text-destructive">{error}</p>
-              </CardContent>
-            </Card>
+        <AppLayout
+          activeStoryboardId={viewState.storyboardId}
+          onStoryboardSelect={handleStoryboardSelect}
+          onNewStoryboard={handleNewStoryboard}
+          currentStoryTitle={currentStoryboard?.title}
+        >
+          {viewState.mode === 'create' ? (
+            <StoryCreator onStoryCreated={handleStoryCreated} />
+          ) : (
+            viewState.storyboardId && (
+              <StoryboardViewer storyboardId={viewState.storyboardId} />
+            )
           )}
-
-          {storyboard && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-2xl">{storyboard.title}</CardTitle>
-                      <CardDescription className="mt-2">
-                        {storyboard.statistics.totalScenes} scenes • 
-                        Cost: ${storyboard.costs.actual.toFixed(3)}
-                      </CardDescription>
-                    </div>
-                    <Badge variant={
-                      storyboard.status === "completed" ? "default" :
-                      storyboard.status === "partial" ? "secondary" : "destructive"
-                    }>
-                      {storyboard.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-              </Card>
-
-              <div className="grid gap-6">
-                {storyboard.scenes.map((scene) => (
-                  <Card key={scene.scene_number}>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">
-                          Scene {scene.scene_number}
-                        </CardTitle>
-                        <Badge variant={
-                          scene.status === "completed" ? "default" :
-                          scene.status === "generating" ? "secondary" :
-                          scene.status === "failed" ? "destructive" : "outline"
-                        }>
-                          {scene.status || "completed"}
-                        </Badge>
-                      </div>
-                      <CardDescription>{scene.scene_description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-medium mb-2">Image Prompt</h4>
-                            <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                              {scene.image_prompt.substring(0, 200)}...
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          {scene.imageData ? (
-                            <div className="space-y-2">
-                              <h4 className="font-medium">Generated Image</h4>
-                              <Image
-                                src={`data:${scene.contentType};base64,${scene.imageData}`}
-                                alt={`Scene ${scene.scene_number}`}
-                                width={640}
-                                height={360}
-                                className="w-full rounded border"
-                              />
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <h4 className="font-medium">Generated Image</h4>
-                              <Skeleton className="w-full aspect-video rounded" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        </AppLayout>
       </SignedIn>
-    </div>
+    </>
   );
 }
