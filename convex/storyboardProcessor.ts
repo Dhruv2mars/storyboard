@@ -27,9 +27,7 @@ export const processStoryboard = internalAction({
     // Get next storyboard from queue
     const queueItem = await ctx.runQuery(internal.storyboardQueue.getNextQueueItem);
     if (!queueItem) {
-      console.log("No storyboards in queue");
-      // Still schedule the next check even if no work to do
-      await ctx.scheduler.runAfter(30000, internal.storyboardProcessor.processStoryboard);
+      console.log("No storyboards in queue - cron will check again later");
       return;
     }
     
@@ -259,8 +257,7 @@ export const processStoryboard = internalAction({
       }
     }
     
-    // Schedule next processing (every 30 seconds to allow for storyboard completion)
-    await ctx.scheduler.runAfter(30000, internal.storyboardProcessor.processStoryboard);
+    // Cron job will handle scheduling - no need for recursive scheduling
   },
 });
 
@@ -481,11 +478,11 @@ export const processStoryboardWithUserKey = internalAction({
   },
 });
 
-// Start the storyboard processor
+// Start the storyboard processor (deprecated - now handled by cron job)
 export const startProcessor = internalAction({
   args: {},
   handler: async (ctx) => {
-    console.log("Starting storyboard processor...");
-    await ctx.scheduler.runAfter(1000, internal.storyboardProcessor.processStoryboard);
+    console.log("Processor startup called - now handled by cron job");
+    // No longer schedules recursive processing - cron job handles it
   },
 });
