@@ -94,9 +94,9 @@ export function StoryCreator({ onStoryCreated }: StoryCreatorProps) {
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">Create New Storyboard</h1>
-        <p className="text-muted-foreground">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2">Create New Storyboard</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Transform your story idea into a complete cinematic storyboard with AI-generated scenes
         </p>
       </div>
@@ -137,31 +137,31 @@ export function StoryCreator({ onStoryCreated }: StoryCreatorProps) {
             maxLength={2000}
           />
           
-          <div className="flex justify-end">
-            <div className="flex gap-2">
-              {creationResult && (
-                <Button variant="outline" onClick={resetForm} disabled={isGenerating}>
-                  Create Another
-                </Button>
-              )}
-              <Button 
-                onClick={handleGenerateStoryboard}
-                disabled={!prompt.trim() || isGenerating || prompt.length < 20}
-                className="min-w-32"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Create Storyboard
-                  </>
-                )}
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-2">
+            {creationResult && (
+              <Button variant="outline" onClick={resetForm} disabled={isGenerating} className="w-full sm:w-auto">
+                Create Another
               </Button>
-            </div>
+            )}
+            <Button 
+              onClick={handleGenerateStoryboard}
+              disabled={!prompt.trim() || isGenerating || prompt.length < 20}
+              className="w-full sm:w-auto sm:min-w-32"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <span className="hidden sm:inline">Creating...</span>
+                  <span className="sm:hidden">Creating</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Create Storyboard</span>
+                  <span className="sm:hidden">Create</span>
+                </>
+              )}
+            </Button>
           </div>
 
           {isGenerating && (

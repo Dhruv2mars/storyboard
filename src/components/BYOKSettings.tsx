@@ -104,7 +104,7 @@ export function BYOKSettings() {
   if (!user) return null;
 
   return (
-    <div className="space-y-6 max-w-lg mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-lg mx-auto">
       <div>
         <h2 className="text-lg font-semibold mb-2">Bring Your Own Key</h2>
         <p className="text-sm text-muted-foreground mb-4">
@@ -142,7 +142,7 @@ export function BYOKSettings() {
       {/* API Key Input */}
       {!byokStatus?.hasApiKey ? (
         <div className="space-y-3">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               type="password"
               placeholder="AIzaSy..."
@@ -155,6 +155,7 @@ export function BYOKSettings() {
               onClick={handleSetApiKey}
               disabled={!apiKey.trim() || isSubmitting}
               size="sm"
+              className="sm:w-auto"
             >
               {isSubmitting ? "Saving..." : "Save"}
             </Button>

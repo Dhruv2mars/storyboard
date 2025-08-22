@@ -132,17 +132,17 @@ export function StoryboardViewer({ storyboardId }: StoryboardViewerProps) {
       {/* Scenes - Grid Layout */}
       {scenes && scenes.length > 0 ? (
         <div className="pb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 auto-rows-fr">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 auto-rows-fr">
             {scenes.map((scene) => (
               <Card key={scene.sceneNumber} className="overflow-hidden h-full flex flex-col">
                 <CardContent className="p-0 flex-1 flex flex-col">
                   <div className="relative flex-1">
                     <SceneImage scene={scene} />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                      <h3 className="text-white font-semibold text-lg mb-1">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4">
+                      <h3 className="text-white font-semibold text-base sm:text-lg mb-1">
                         Scene {scene.sceneNumber}
                       </h3>
-                      <p className="text-white/90 text-sm leading-relaxed line-clamp-3 overflow-hidden">
+                      <p className="text-white/90 text-xs sm:text-sm leading-relaxed line-clamp-3 overflow-hidden">
                         {scene.sceneDescription || scene.description || "Scene description"}
                       </p>
                     </div>

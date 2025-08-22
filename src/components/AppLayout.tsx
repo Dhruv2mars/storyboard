@@ -44,7 +44,7 @@ export function AppLayout({
 }: AppLayoutProps) {
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [settingsOpen, setSettingsOpen] = useState(false);
   
   // Get user's storyboards with safe error handling
@@ -74,9 +74,27 @@ export function AppLayout({
 
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background relative">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r bg-muted/30 flex flex-col overflow-hidden lg:relative absolute lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-40`}>
+      <div className={`
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        fixed lg:relative lg:translate-x-0
+        w-80 lg:w-80
+        ${sidebarOpen ? 'lg:w-80' : 'lg:w-0'}
+        h-full
+        transition-all duration-300
+        border-r bg-background
+        flex flex-col overflow-hidden
+        z-50 lg:z-auto
+      `}>
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -118,9 +136,7 @@ export function AppLayout({
                   onClick={() => {
                     onStoryboardSelect?.(story._id);
                     // Close sidebar on mobile after selection
-                    if (window.innerWidth < 1024) {
-                      setSidebarOpen(false);
-                    }
+                    setSidebarOpen(false);
                   }}
                   className={`group cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
                     activeStoryboardId === story._id 
@@ -204,45 +220,39 @@ export function AppLayout({
         </div>
       </div>
 
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                {!sidebarOpen && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSidebarOpen(true)}
-                    className="h-8 w-8"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                )}
-                {!sidebarOpen && (
-                  <div className="flex items-center gap-2">
-                    <Film className="w-5 h-5 text-primary" />
-                    <span className="font-semibold">Storyboard</span>
-                  </div>
-                )}
-                {currentStoryTitle && (
-                  <h1 className="text-lg font-semibold">{currentStoryTitle}</h1>
-                )}
-              </div>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(true)}
+                className="h-8 w-8 lg:hidden"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              
+              {!sidebarOpen && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <Film className="w-5 h-5 text-primary flex-shrink-0" />
+                  <span className="font-semibold hidden sm:block">Storyboard</span>
+                </div>
+              )}
+              
+              {currentStoryTitle && (
+                <h1 className="text-lg font-semibold truncate min-w-0 flex-1">
+                  {currentStoryTitle}
+                </h1>
+              )}
             </div>
             
             {/* Theme Toggle */}
-            <ThemeToggle />
+            <div className="flex-shrink-0">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 

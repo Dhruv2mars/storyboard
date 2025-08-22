@@ -50,17 +50,17 @@ export default function Home() {
     <>
       <SignedOut>
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="container mx-auto px-4 py-16 max-w-4xl text-center">
-            <div className="mb-12">
-              <Film className="w-20 h-20 mx-auto mb-6 text-primary" />
-              <h1 className="text-5xl font-bold mb-6">AI Storyboard Generator</h1>
-              <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+          <div className="container mx-auto px-4 py-8 sm:py-16 max-w-4xl text-center">
+            <div className="mb-8 sm:mb-12">
+              <Film className="w-16 sm:w-20 h-16 sm:h-20 mx-auto mb-4 sm:mb-6 text-primary" />
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">AI Storyboard Generator</h1>
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
                 Transform your story ideas into professional cinematic storyboards with AI-generated 
                 black and white sketches. Sign in to get started.
               </p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-5xl mx-auto">
               <Card className="text-center">
                 <CardHeader>
                   <Sparkles className="w-12 h-12 text-primary mb-4 mx-auto" />
@@ -98,14 +98,14 @@ export default function Home() {
               </Card>
             </div>
             
-            <div className="mt-12 flex justify-center gap-4">
+            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
               <SignInButton mode="modal">
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
                   Sign In
                 </Button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <Button size="lg">
+                <Button size="lg" className="w-full sm:w-auto">
                   Get Started
                 </Button>
               </SignUpButton>
