@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { GoogleGenAI } from "@google/genai";
+// import { GoogleGenAI } from "@google/genai";
 
 // System prompt for LLM
 const SYSTEM_PROMPT = `You are an expert AI Director and Cinematographer. Your task is to take a user's high-level concept and transform it into a structured storyboard plan.
@@ -62,19 +62,33 @@ export const generateStoryStructure = action({
     console.log("Generating story structure for user:", userId);
     
     try {
-      // Initialize Gemini client
+      // Initialize direct API call to Gemini
       console.log("API Key available:", !!process.env.GEMINI_API_KEY);
-      const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      console.log("API Key value:", process.env.GEMINI_API_KEY?.substring(0, 10) + "...");
+      console.log("Starting story generation for user:", userId);
       
-      // Generate story structure with LLM
+      // Generate story structure with LLM using direct fetch
       const fullPrompt = `${SYSTEM_PROMPT}\n\nUSER PROMPT: ${prompt}`;
       
-      const result = await genAI.models.generateContent({
-        model: "gemini-2.0-flash-lite",
-        contents: fullPrompt
+      console.log("Making Gemini API call with fetch...");
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: fullPrompt }] }]
+        })
       });
       
-      const text = result.text;
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log("Gemini API response received");
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      console.log("Extracted text length:", text?.length);
       
       // Parse the JSON response
       let storyData: StoryResponse;
